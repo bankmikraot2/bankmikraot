@@ -11,15 +11,12 @@
             padding: 0;
             position: relative;
             min-height: 100vh;
-            overflow-x: hidden; /* מונע גלילה אופקית */
         }
         .container {
             margin: 30px auto;
-            width: 100%;
-            max-width: 1200px; /* שיניתי את הרוחב המקסימלי כדי שיהיה רחב יותר */
+            max-width: 600px;
             text-align: center;
             position: relative;
-            padding: 20px; /* מוסיף רווח פנימי כדי שהטקסט לא יהיה צמוד לדפנות */
         }
         #student-number {
             padding: 10px;
@@ -71,7 +68,7 @@
             margin-top: -45px;
         }
         .student-image {
-            width: 100%;
+            width: 140%;
             max-width: 420px;
             margin: 5px auto;
         }
@@ -81,8 +78,7 @@
             margin-top: -45px;
         }
         .points-container img {
-            width: 100%;
-            max-width: 300px;
+            width: 300px;
             height: auto;
         }
         .points-text {
@@ -105,7 +101,7 @@
         .side-image-left {
             position: absolute;
             top: 50%;
-            left: 0;
+            left: 50;
             transform: translateY(-50%);
             width: 500px;
             height: auto;
@@ -137,7 +133,6 @@
 
     <div id="error-message"></div>
 
-    <!-- הצגת התמונות כברירת מחדל -->
     <div id="student-image">
         <img src="images/01.png" alt="תלמיד יקר" class="student-image">
     </div>
@@ -153,7 +148,71 @@
 <img src="images/e.png" alt="Right Image" class="side-image-right">
 
 <script>
-    // קוד JavaScript שלך נותר כמו שהוא
+    const API_KEY = 'AIzaSyBR8GxtwO8hDWdNDcF6IUUgLQ745lu0Rb0';
+    const SPREADSHEET_ID = '1g8dsaK61biI6TDECNUnb32G0Hywk7HyMhkOXtld54VY';
+    const RANGE = 'תלמידים!A:F';
+    const URL = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${RANGE}?key=${API_KEY}`;
+
+    function checkEnter(event) {
+        if (event.keyCode === 13) {
+            getStudentData();
+        }
+    }
+
+    async function getStudentData() {
+        const studentNumber = document.getElementById('student-number').value;
+        if (!studentNumber) {
+            showError('אנא הכנס מספר תלמיד');
+            return;
+        }
+
+        try {
+            const response = await fetch(URL);
+            const data = await response.json();
+
+            if (data.values && data.values.length > 0) {
+                const student = findStudent(data.values, studentNumber);
+                if (student) {
+                    showStudentData(student);
+                } else {
+                    showError('תלמיד לא נמצא');
+                }
+            } else {
+                showError('לא נמצאו נתונים בגיליון');
+            }
+        } catch (error) {
+            showError('שגיאה בשליפת הנתונים: ' + error);
+        }
+    }
+
+    function findStudent(data, studentNumber) {
+        for (let i = 1; i < data.length; i++) {
+            if (data[i][0] == studentNumber.replace(/^0+/, '')) {
+                return {
+                    id: data[i][0],
+                    name: data[i][1],
+                    family: data[i][2],
+                    branch: data[i][3],
+                    points: data[i][4]
+                };
+            }
+        }
+        return null;
+    }
+
+    function showStudentData(student) {
+        document.getElementById('student-name-family').textContent = student.name + ' ' + student.family;
+        document.getElementById('branch-name').textContent = 'סניף: ' + student.branch;
+        document.getElementById('student-points').textContent = student.points;
+
+        document.getElementById('error-message').textContent = '';
+    }
+
+    function showError(message) {
+        document.getElementById('error-message').textContent = message;
+        document.getElementById('student-name-family').textContent = '';
+        document.getElementById('branch-name').textContent = '';
+    }
 </script>
 
 </body>
